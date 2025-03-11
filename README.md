@@ -46,6 +46,13 @@ chmod +x google_drive_manager_fixed.sh
 - **v1.0**: Initial version with basic features
 - **v1.1**: Fixed "segmentation fault" issue with mysides
 - **v1.2**: Improvements in URL decoding and support for special characters
+- **v1.3**: Translated menu and interface to English for better accessibility
+
+## Latest Updates
+
+- Menu and user interface translated to English
+- Added version tracking with Git
+- Published on GitHub for better version control and sharing
 
 ## License
 
