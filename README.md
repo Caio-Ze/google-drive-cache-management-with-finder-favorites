@@ -15,6 +15,14 @@ Script to manage Google Drive cache and Finder sidebar favorites on macOS.
 - Homebrew (optional, for installing mysides)
 - `mysides` tool (will be automatically installed if necessary)
 
+## Compatibility
+
+- **macOS Versions**: 10.15 Catalina, 11 Big Sur, 12 Monterey
+- **Google Drive Versions**: 
+  - Google Drive for Desktop 52.0.6 - 70.0.2 (2022-2023)
+  - Google Drive File Stream 45.0.12 and later
+- **Note**: May work with newer versions, but has been specifically tested with these versions
+
 ## Usage
 
 1. Make the script executable:
