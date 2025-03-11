@@ -1,26 +1,26 @@
 #!/bin/bash
 
-# Script unificado para gerenciar o cache do Google Drive e os favoritos do Finder
-# Versão corrigida para evitar o problema de segmentation fault do mysides
+# Unified script to manage Google Drive cache and Finder favorites
+# Fixed version to avoid the mysides segmentation fault problem
 
-# Função para mostrar mensagens coloridas
-function mostrar_info {
+# Function to display colored messages
+function show_info {
   echo -e "\033[1;34mℹ️ $1\033[0m"
 }
 
-function mostrar_sucesso {
+function show_success {
   echo -e "\033[1;32m✅ $1\033[0m"
 }
 
-function mostrar_aviso {
+function show_warning {
   echo -e "\033[1;33m⚠️ $1\033[0m"
 }
 
-function mostrar_erro {
+function show_error {
   echo -e "\033[1;31m❌ $1\033[0m"
 }
 
-function mostrar_cabecalho {
+function show_header {
   clear
   echo -e "\033[1;36m===================================================\033[0m"
   echo -e "\033[1;36m  Google Drive and Finder Favorites Manager  \033[0m"
@@ -28,100 +28,100 @@ function mostrar_cabecalho {
   echo ""
 }
 
-# Verificar se mysides está instalado
-verificar_mysides() {
+# Check if mysides is installed
+check_mysides() {
   if ! command -v mysides &> /dev/null; then
-    mostrar_aviso "A ferramenta 'mysides' não está instalada."
-    mostrar_info "Esta ferramenta é necessária para gerenciar os favoritos do Finder."
-    mostrar_info "Você pode instalá-la usando Homebrew com: brew install mysides"
+    show_warning "The 'mysides' tool is not installed."
+    show_info "This tool is necessary to manage Finder favorites."
+    show_info "You can install it using Homebrew with: brew install mysides"
     
-    # Perguntar se o usuário deseja instalar o Homebrew e mysides
-    read -p "Deseja instalar o Homebrew e o mysides agora? (s/n): " INSTALAR
-    if [[ "$INSTALAR" == "s" || "$INSTALAR" == "S" ]]; then
-      mostrar_info "Instalando Homebrew..."
+    # Ask if the user wants to install Homebrew and mysides
+    read -p "Do you want to install Homebrew and mysides now? (y/n): " INSTALL
+    if [[ "$INSTALL" == "y" || "$INSTALL" == "Y" ]]; then
+      show_info "Installing Homebrew..."
       /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       
-      mostrar_info "Instalando mysides..."
+      show_info "Installing mysides..."
       brew install mysides
       
       if ! command -v mysides &> /dev/null; then
-        mostrar_erro "Falha ao instalar o mysides. Por favor, instale manualmente."
+        show_error "Failed to install mysides. Please install it manually."
         return 1
       else
-        mostrar_sucesso "mysides instalado com sucesso!"
+        show_success "mysides installed successfully!"
       fi
     else
-      mostrar_info "Por favor, instale o mysides manualmente para usar as funcionalidades de gerenciamento de favoritos."
+      show_info "Please install mysides manually to use the favorites management features."
       return 1
     fi
   fi
   return 0
 }
 
-# Criar diretórios necessários
-criar_diretorios() {
+# Create necessary directories
+create_directories() {
   BACKUP_DIR=~/Desktop/Google_Drive_Manager
   mkdir -p "$BACKUP_DIR/Backups"
-  mkdir -p "$BACKUP_DIR/Atalhos"
-  mostrar_sucesso "Diretórios criados: $BACKUP_DIR"
+  mkdir -p "$BACKUP_DIR/Shortcuts"
+  show_success "Directories created: $BACKUP_DIR"
   return 0
 }
 
-# Função para fazer backup dos favoritos utilizando diretamente a saída de mysides list
-backup_favoritos() {
-  mostrar_info "Fazendo backup dos favoritos importantes..."
+# Function to backup favorites using mysides list output directly
+backup_favorites() {
+  show_info "Backing up important favorites..."
   
-  # Criar diretório para backups
-  criar_diretorios
+  # Create directory for backups
+  create_directories
   
   BACKUP_FILE="$BACKUP_DIR/Backups/finder_favorites_$(date +%Y%m%d_%H%M%S).txt"
   
-  # Criar arquivo de backup
-  echo "# Favoritos do Finder (gerado em $(date))" > "$BACKUP_FILE"
+  # Create backup file
+  echo "# Finder Favorites (generated on $(date))" > "$BACKUP_FILE"
   
-  mostrar_info "Obtendo favoritos diretamente da barra lateral do Finder..."
+  show_info "Getting favorites directly from the Finder sidebar..."
   
-  # Usar o mysides list para obter os favoritos existentes
-  # Redirecionamos stderr para evitar que erros interrompam o processo
+  # Use mysides list to get existing favorites
+  # Redirect stderr to avoid errors interrupting the process
   TEMP_MYSIDES_OUTPUT=$(mktemp)
   mysides list 2>/dev/null > "$TEMP_MYSIDES_OUTPUT"
   
-  # Verificar se conseguimos obter a lista de favoritos
+  # Check if we were able to get the favorites list
   if [ -s "$TEMP_MYSIDES_OUTPUT" ]; then
-    # Processar cada linha da saída
-    while read -r linha; do
-      # Verificar se a linha contém a flecha (->)
-      if [[ "$linha" == *"->"* ]]; then
-        # Extrair nome e caminho
-        nome=$(echo "$linha" | awk -F "->" '{print $1}' | xargs)
-        caminho=$(echo "$linha" | awk -F "->" '{print $2}' | xargs)
+    # Process each line of output
+    while read -r line; do
+      # Check if the line contains an arrow (->)
+      if [[ "$line" == *"->"* ]]; then
+        # Extract name and path
+        name=$(echo "$line" | awk -F "->" '{print $1}' | xargs)
+        path=$(echo "$line" | awk -F "->" '{print $2}' | xargs)
         
-        # Verificar se temos nome e caminho válidos
-        if [ -n "$nome" ] && [ -n "$caminho" ]; then
-          echo "$nome $caminho" >> "$BACKUP_FILE"
-          mostrar_sucesso "Adicionado ao backup: $nome"
+        # Verify we have valid name and path
+        if [ -n "$name" ] && [ -n "$path" ]; then
+          echo "$name $path" >> "$BACKUP_FILE"
+          show_success "Added to backup: $name"
         fi
       fi
     done < "$TEMP_MYSIDES_OUTPUT"
     
-    mostrar_sucesso "Favoritos extraídos diretamente da barra lateral!"
+    show_success "Favorites extracted directly from the sidebar!"
   else
-    mostrar_aviso "Não foi possível obter a lista de favoritos usando mysides list."
+    show_warning "Could not get favorites list using mysides list."
     
-    # Se não conseguirmos usar mysides list, tentamos o método alternativo
-    mostrar_info "Usando método alternativo para identificar favoritos importantes..."
+    # If we can't use mysides list, try the alternative method
+    show_info "Using alternative method to identify important favorites..."
     
-    # Encontrar o diretório do Google Drive
+    # Find the Google Drive directory
     GOOGLE_DRIVE_DIR=""
     if [ -d ~/Library/CloudStorage ]; then
       GOOGLE_DRIVE_DIR=$(find ~/Library/CloudStorage -maxdepth 1 -name "GoogleDrive-*" -type d | head -1)
     fi
     
     if [ -n "$GOOGLE_DRIVE_DIR" ]; then
-      mostrar_info "Diretório do Google Drive encontrado: $GOOGLE_DRIVE_DIR"
+      show_info "Google Drive directory found: $GOOGLE_DRIVE_DIR"
       
-      # Array simples de pastas para verificar
-      PASTAS_IMPORTANTES=(
+      # Simple array of folders to check
+      IMPORTANT_FOLDERS=(
         "CARREFOUR"
         "14_783_230669_SEXTA"
         "COMPARTILHADO"
@@ -138,186 +138,186 @@ backup_favoritos() {
         "TV"
       )
       
-      # Função auxiliar para registrar pasta encontrada
-      adicionar_pasta_backup() {
-        local nome="$1"
-        local caminho="$2"
-        echo "$nome file://$caminho" >> "$BACKUP_FILE"
-        mostrar_sucesso "Adicionado ao backup: $nome ($3)"
+      # Helper function to register found folder
+      add_folder_to_backup() {
+        local name="$1"
+        local path="$2"
+        echo "$name file://$path" >> "$BACKUP_FILE"
+        show_success "Added to backup: $name ($3)"
       }
       
-      # Adicionar pastas básicas do Google Drive
+      # Add basic Google Drive folders
       if [ -d "$GOOGLE_DRIVE_DIR/My Drive" ]; then
-        adicionar_pasta_backup "My Drive" "$GOOGLE_DRIVE_DIR/My Drive" "Google Drive"
+        add_folder_to_backup "My Drive" "$GOOGLE_DRIVE_DIR/My Drive" "Google Drive"
       fi
       
       if [ -d "$GOOGLE_DRIVE_DIR/Shared drives" ]; then
-        adicionar_pasta_backup "Shared drives" "$GOOGLE_DRIVE_DIR/Shared drives" "Google Drive"
+        add_folder_to_backup "Shared drives" "$GOOGLE_DRIVE_DIR/Shared drives" "Google Drive"
       fi
       
-      # Array para rastrear pastas encontradas
-      PASTAS_ENCONTRADAS=()
+      # Array to track found folders
+      FOLDERS_FOUND=()
       
-      # Verificar pastas na pasta pessoal do usuário
-      for pasta in "${PASTAS_IMPORTANTES[@]}"; do
-        if [ -d ~/"$pasta" ]; then
-          adicionar_pasta_backup "$pasta" "/Users/$(whoami)/$pasta" "pasta pessoal"
-          PASTAS_ENCONTRADAS+=("$pasta")
+      # Check folders in user's home directory
+      for folder in "${IMPORTANT_FOLDERS[@]}"; do
+        if [ -d ~/"$folder" ]; then
+          add_folder_to_backup "$folder" "/Users/$(whoami)/$folder" "home folder"
+          FOLDERS_FOUND+=("$folder")
         fi
       done
       
-      # Verificar pastas no Desktop
-      for pasta in "${PASTAS_IMPORTANTES[@]}"; do
-        # Verificar se já foi encontrada
-        ENCONTRADA=0
-        for p in "${PASTAS_ENCONTRADAS[@]}"; do
-          if [ "$p" = "$pasta" ]; then
-            ENCONTRADA=1
+      # Check folders on Desktop
+      for folder in "${IMPORTANT_FOLDERS[@]}"; do
+        # Check if already found
+        FOUND=0
+        for p in "${FOLDERS_FOUND[@]}"; do
+          if [ "$p" = "$folder" ]; then
+            FOUND=1
             break
           fi
         done
         
-        # Se não foi encontrada, procurar no Desktop
-        if [ $ENCONTRADA -eq 0 ] && [ -d ~/Desktop/"$pasta" ]; then
-          adicionar_pasta_backup "$pasta" "/Users/$(whoami)/Desktop/$pasta" "Desktop"
-          PASTAS_ENCONTRADAS+=("$pasta")
+        # If not found, look on the Desktop
+        if [ $FOUND -eq 0 ] && [ -d ~/Desktop/"$folder" ]; then
+          add_folder_to_backup "$folder" "/Users/$(whoami)/Desktop/$folder" "Desktop"
+          FOLDERS_FOUND+=("$folder")
         fi
       done
       
-      # Verificar pastas em Shared Drives
+      # Check folders in Shared Drives
       if [ -d "$GOOGLE_DRIVE_DIR/Shared drives" ]; then
-        for pasta in "${PASTAS_IMPORTANTES[@]}"; do
-          # Verificar se já foi encontrada
-          ENCONTRADA=0
-          for p in "${PASTAS_ENCONTRADAS[@]}"; do
-            if [ "$p" = "$pasta" ]; then
-              ENCONTRADA=1
+        for folder in "${IMPORTANT_FOLDERS[@]}"; do
+          # Check if already found
+          FOUND=0
+          for p in "${FOLDERS_FOUND[@]}"; do
+            if [ "$p" = "$folder" ]; then
+              FOUND=1
               break
             fi
           done
           
-          # Se não foi encontrada, procurar em Shared Drives
-          if [ $ENCONTRADA -eq 0 ]; then
-            # Procurar em profundidade nos Shared Drives
-            caminho_encontrado=$(find "$GOOGLE_DRIVE_DIR/Shared drives" -maxdepth 5 -type d -name "$pasta" -print -quit 2>/dev/null)
-            if [ -n "$caminho_encontrado" ]; then
-              adicionar_pasta_backup "$pasta" "$caminho_encontrado" "Shared Drives"
-              PASTAS_ENCONTRADAS+=("$pasta")
+          # If not found, look in Shared Drives
+          if [ $FOUND -eq 0 ]; then
+            # Search in depth in Shared Drives
+            path_found=$(find "$GOOGLE_DRIVE_DIR/Shared drives" -maxdepth 5 -type d -name "$folder" -print -quit 2>/dev/null)
+            if [ -n "$path_found" ]; then
+              add_folder_to_backup "$folder" "$path_found" "Shared Drives"
+              FOLDERS_FOUND+=("$folder")
               continue
             fi
           fi
         done
       fi
       
-      # Adicionar pastas padrão do macOS (comuns)
+      # Add standard macOS folders (common)
       if [ -d ~/Desktop ]; then
-        adicionar_pasta_backup "Desktop" "/Users/$(whoami)/Desktop" "sistema"
+        add_folder_to_backup "Desktop" "/Users/$(whoami)/Desktop" "system"
       fi
       
       if [ -d ~/Downloads ]; then
-        adicionar_pasta_backup "Downloads" "/Users/$(whoami)/Downloads" "sistema"
+        add_folder_to_backup "Downloads" "/Users/$(whoami)/Downloads" "system"
       fi
       
       if [ -d ~/Documents ]; then
-        adicionar_pasta_backup "Documents" "/Users/$(whoami)/Documents" "sistema"
+        add_folder_to_backup "Documents" "/Users/$(whoami)/Documents" "system"
       fi
       
       if [ -d /Applications ]; then
-        adicionar_pasta_backup "Applications" "/Applications" "sistema"
+        add_folder_to_backup "Applications" "/Applications" "system"
       fi
     else
-      mostrar_erro "Não foi possível encontrar o diretório do Google Drive."
+      show_error "Could not find the Google Drive directory."
     fi
   fi
   
-  # Limpar arquivo temporário
+  # Clean up temporary file
   rm -f "$TEMP_MYSIDES_OUTPUT"
   
-  # Extrair apenas os nomes dos favoritos para uso posterior
+  # Extract only the names of favorites for later use
   NAMES_FILE="$BACKUP_DIR/Backups/finder_favorites_names_$(date +%Y%m%d_%H%M%S).txt"
   grep -v "^#" "$BACKUP_FILE" | awk -F " file:" '{print $1}' > "$NAMES_FILE"
   
-  # Verificar se o backup foi criado com sucesso
+  # Check if backup was created successfully
   if [ -s "$BACKUP_FILE" ]; then
-    mostrar_sucesso "Backup dos favoritos criado com sucesso!"
-    echo "Favoritos salvos:"
+    show_success "Favorites backup created successfully!"
+    echo "Saved favorites:"
     cat "$BACKUP_FILE"
     echo ""
-    mostrar_info "O backup completo foi salvo em: $BACKUP_FILE"
-    # Criar um link para o backup mais recente para facilitar a restauração
-    ln -sf "$BACKUP_FILE" "$BACKUP_DIR/Backups/ultimo_backup.txt"
-    ln -sf "$NAMES_FILE" "$BACKUP_DIR/Backups/ultimo_backup_nomes.txt"
-    mostrar_sucesso "Links para o último backup criados."
+    show_info "The complete backup was saved to: $BACKUP_FILE"
+    # Create a link to the most recent backup for easy restoration
+    ln -sf "$BACKUP_FILE" "$BACKUP_DIR/Backups/latest_backup.txt"
+    ln -sf "$NAMES_FILE" "$BACKUP_DIR/Backups/latest_backup_names.txt"
+    show_success "Links to the latest backup created."
     return 0
   else
-    mostrar_erro "Não foi possível criar o backup dos favoritos ou a lista está vazia."
+    show_error "Could not create favorites backup or the list is empty."
     return 1
   fi
 }
 
-# Função para limpar o cache do Google Drive
-limpar_cache() {
-  mostrar_info "Preparando para limpar o cache do Google Drive..."
+# Function to clean Google Drive cache
+clean_cache() {
+  show_info "Preparing to clean Google Drive cache..."
   
-  # Encerrar o Google Drive
-  mostrar_info "Encerrando o Google Drive..."
+  # Close Google Drive
+  show_info "Closing Google Drive..."
   pkill -f "Google Drive"
   
-  # Aguardar o encerramento
+  # Wait for shutdown
   COUNTER=0
   while pgrep -f "Google Drive" >/dev/null; do
     ((COUNTER++))
-    echo "Ainda rodando... (tentativa $COUNTER)"
+    echo "Still running... (attempt $COUNTER)"
     sleep 1
     if [ $COUNTER -ge 5 ]; then
-      mostrar_aviso "Limite de 5 tentativas atingido."
+      show_warning "Limit of 5 attempts reached."
       break
     fi
   done
   
-  # Remover atributos de imutabilidade
-  mostrar_info "Removendo atributos de imutabilidade..."
+  # Remove immutability attributes
+  show_info "Removing immutability attributes..."
   sudo chflags -R nouchg ~/Library/CloudStorage
   
-  # Ajustar permissões
-  mostrar_info "Ajustando permissões..."
+  # Adjust permissions
+  show_info "Adjusting permissions..."
   sudo chmod -R 777 ~/Library/CloudStorage
   
-  # Calcular tamanho da pasta de cache
-  mostrar_info "Calculando tamanho da pasta de cache:"
+  # Calculate cache folder size
+  show_info "Calculating cache folder size:"
   sudo du -sh ~/Library/CloudStorage
   
-  # Remover a pasta de cache
-  mostrar_info "Removendo a pasta de cache..."
+  # Remove cache folder
+  show_info "Removing cache folder..."
   sudo rm -rf ~/Library/CloudStorage
-  mostrar_sucesso "Cache removido."
+  show_success "Cache removed."
   
-  # Reabrir o Google Drive
-  mostrar_info "Reabrindo o Google Drive..."
+  # Reopen Google Drive
+  show_info "Reopening Google Drive..."
   open -a "Google Drive"
-  mostrar_sucesso "Google Drive reaberto."
+  show_success "Google Drive reopened."
   
-  mostrar_info "Aguardando o Google Drive inicializar (30 segundos)..."
+  show_info "Waiting for Google Drive to initialize (30 seconds)..."
   for i in {30..1}; do
-    echo -ne "Aguardando: $i segundos restantes\r"
+    echo -ne "Waiting: $i seconds remaining\r"
     sleep 1
   done
   echo ""
   
-  mostrar_sucesso "Cache do Google Drive limpo com sucesso!"
+  show_success "Google Drive cache cleared successfully!"
   return 0
 }
 
-# Função para adicionar os favoritos do Google Drive
-adicionar_favoritos_google_drive() {
-  mostrar_info "Adicionando favoritos do Google Drive..."
+# Function to add Google Drive favorites
+add_google_drive_favorites() {
+  show_info "Adding Google Drive favorites..."
   
-  # Verificar se mysides está instalado
-  verificar_mysides || return 1
+  # Check if mysides is installed
+  check_mysides || return 1
   
-  # Encontrar o diretório do Google Drive
+  # Find Google Drive directory
   GOOGLE_DRIVE_DIR=""
-  mostrar_info "Procurando o diretório do Google Drive (pode levar alguns segundos)..."
+  show_info "Looking for Google Drive directory (may take a few seconds)..."
   
   COUNTER=0
   while [ -z "$GOOGLE_DRIVE_DIR" ] && [ $COUNTER -lt 6 ]; do
@@ -327,24 +327,24 @@ adicionar_favoritos_google_drive() {
     
     if [ -z "$GOOGLE_DRIVE_DIR" ]; then
       ((COUNTER++))
-      mostrar_info "Aguardando o Google Drive criar o diretório... (tentativa $COUNTER)"
+      show_info "Waiting for Google Drive to create the directory... (attempt $COUNTER)"
       sleep 5
     fi
   done
   
   if [ -z "$GOOGLE_DRIVE_DIR" ]; then
-    mostrar_erro "Não foi possível encontrar o diretório do Google Drive."
-    mostrar_info "Aguarde alguns minutos para o Google Drive sincronizar e tente novamente."
+    show_error "Could not find Google Drive directory."
+    show_info "Wait a few minutes for Google Drive to sync and try again."
     return 1
   fi
   
-  mostrar_info "Diretório do Google Drive encontrado: $GOOGLE_DRIVE_DIR"
+  show_info "Google Drive directory found: $GOOGLE_DRIVE_DIR"
   
-  # Criar diretório para atalhos
-  criar_diretorios
+  # Create directory for shortcuts
+  create_directories
   
-  # Lista de pastas importantes para verificar
-  PASTAS_IMPORTANTES=(
+  # List of important folders to check
+  IMPORTANT_FOLDERS=(
     "CARREFOUR"
     "14_783_230669_SEXTA"
     "COMPARTILHADO"
@@ -358,309 +358,299 @@ adicionar_favoritos_google_drive() {
     "DynamicBounceMonitor"
   )
   
-  # Primeiro, remover entradas duplicadas ou parciais existentes
-  mostrar_info "Removendo entradas duplicadas ou parciais existentes..."
+  # First, remove existing duplicate or partial entries
+  show_info "Removing existing duplicate or partial entries..."
   
-  # Remover entradas básicas do Google Drive
+  # Remove basic Google Drive entries
   mysides remove "My" 2>/dev/null
   mysides remove "My Drive" 2>/dev/null
   mysides remove "Shared" 2>/dev/null
   mysides remove "Shared drives" 2>/dev/null
   
-  # Remover todas as pastas importantes potencialmente já existentes
-  for pasta in "${PASTAS_IMPORTANTES[@]}"; do
-    mysides remove "$pasta" 2>/dev/null
-    echo "Removido (se existia): $pasta"
+  # Remove all potentially already existing important folders
+  for folder in "${IMPORTANT_FOLDERS[@]}"; do
+    mysides remove "$folder" 2>/dev/null
+    echo "Removed (if existed): $folder"
   done
   
-  # Aguardar um momento para garantir que todos os favoritos foram removidos
+  # Wait a moment to ensure all favorites are removed
   sleep 2
   
-  # Função para adicionar um favorito com método mais robusto
-  adicionar_favorito() {
-    local nome="$1"
-    local caminho="$2"
+  # Function to add a favorite with a more robust method
+  add_favorite() {
+    local name="$1"
+    local path="$2"
     
-    if [ ! -d "$caminho" ]; then
-      mostrar_aviso "Diretório não encontrado: $caminho"
+    if [ ! -d "$path" ]; then
+      show_warning "Directory not found: $path"
       return 1
     fi
     
-    # Gerar URL com caracteres escapados (vários métodos)
-    local url1="file://$caminho"
-    local url2=$(echo "file://$caminho" | sed 's/ /%20/g')
+    # Generate URL with escaped characters (multiple methods)
+    local url1="file://$path"
+    local url2=$(echo "file://$path" | sed 's/ /%20/g')
     
-    # Método 1: URL sem escape
-    mostrar_info "Tentando adicionar $nome com URL simples..."
-    mysides add "$nome" "$url1" 2>/dev/null
+    # Method 1: Simple URL
+    show_info "Trying to add $name with simple URL..."
+    mysides add "$name" "$url1" 2>/dev/null
     
-    # Verificar se foi adicionado
-    if mysides list 2>/dev/null | grep -q "$nome"; then
-      mostrar_sucesso "Favorito adicionado: $nome"
+    # Check if added
+    if mysides list 2>/dev/null | grep -q "$name"; then
+      show_success "Favorite added: $name"
       return 0
     fi
     
-    # Método 2: URL com escape
-    mostrar_info "Tentando adicionar $nome com URL escapada..."
-    mysides add "$nome" "$url2" 2>/dev/null
+    # Method 2: Escaped URL
+    show_info "Trying to add $name with escaped URL..."
+    mysides add "$name" "$url2" 2>/dev/null
     
-    # Verificar se foi adicionado
-    if mysides list 2>/dev/null | grep -q "$nome"; then
-      mostrar_sucesso "Favorito adicionado: $nome"
+    # Check if added
+    if mysides list 2>/dev/null | grep -q "$name"; then
+      show_success "Favorite added: $name"
       return 0
     fi
     
-    # Método 3: Caminho direto
-    mostrar_info "Tentando adicionar $nome com caminho direto..."
-    mysides add "$nome" "$caminho" 2>/dev/null
+    # Method 3: Direct path
+    show_info "Trying to add $name with direct path..."
+    mysides add "$name" "$path" 2>/dev/null
     
-    # Verificar se foi adicionado
-    if mysides list 2>/dev/null | grep -q "$nome"; then
-      mostrar_sucesso "Favorito adicionado: $nome"
+    # Check if added
+    if mysides list 2>/dev/null | grep -q "$name"; then
+      show_success "Favorite added: $name"
       return 0
     fi
     
-    # Método 4: mysides com opções adicionais (force)
-    mostrar_info "Tentando método avançado para $nome..."
-    # Usando parâmetros extras para força a adição
+    # Method 4: mysides with additional options (force)
+    show_info "Trying advanced method for $name..."
+    # Using extra parameters to force adding
     osascript -e "tell application \"Finder\" to set sidebar of front window to sidebar of front window" 2>/dev/null
-    mysides add "$nome" "file://$caminho" 2>/dev/null
+    mysides add "$name" "file://$path" 2>/dev/null
     
-    mostrar_aviso "Talvez seja necessário adicionar $nome manualmente."
+    show_warning "You may need to add $name manually."
     return 1
   }
   
-  # Busca recursiva para encontrar pastas específicas
-  encontrar_e_adicionar_pasta() {
-    local pasta_nome="$1"
-    local diretorio_base="$2"
-    local profundidade="${3:-3}"  # Profundidade padrão: 3 níveis
+  # Recursive search to find specific folders
+  find_and_add_folder() {
+    local folder_name="$1"
+    local base_directory="$2"
+    local depth="${3:-3}"  # Default depth: 3 levels
     
-    mostrar_info "Procurando por '$pasta_nome' em $diretorio_base (profundidade $profundidade)..."
+    show_info "Looking for '$folder_name' in $base_directory (depth $depth)..."
     
-    # Procurar usando find com profundidade limitada
-    local caminho_encontrado=$(find "$diretorio_base" -maxdepth "$profundidade" -type d -name "$pasta_nome" -print -quit 2>/dev/null)
+    # Search using find with limited depth
+    local path_found=$(find "$base_directory" -maxdepth "$depth" -type d -name "$folder_name" -print -quit 2>/dev/null)
     
-    if [ -n "$caminho_encontrado" ]; then
-      mostrar_info "Pasta '$pasta_nome' encontrada em: $caminho_encontrado"
-      adicionar_favorito "$pasta_nome" "$caminho_encontrado"
+    if [ -n "$path_found" ]; then
+      show_info "Folder '$folder_name' found at: $path_found"
+      add_favorite "$folder_name" "$path_found"
       return 0
     else
-      mostrar_aviso "Pasta '$pasta_nome' não encontrada em $diretorio_base"
+      show_warning "Folder '$folder_name' not found in $base_directory"
       return 1
     fi
   }
   
-  # Adicionar pastas básicas do Google Drive
+  # Add basic Google Drive folders
   MY_DRIVE_PATH="$GOOGLE_DRIVE_DIR/My Drive"
   SHARED_DRIVES_PATH="$GOOGLE_DRIVE_DIR/Shared drives"
   
   if [ -d "$MY_DRIVE_PATH" ]; then
-    adicionar_favorito "My Drive" "$MY_DRIVE_PATH"
+    add_favorite "My Drive" "$MY_DRIVE_PATH"
   fi
   
   if [ -d "$SHARED_DRIVES_PATH" ]; then
-    adicionar_favorito "Shared drives" "$SHARED_DRIVES_PATH"
+    add_favorite "Shared drives" "$SHARED_DRIVES_PATH"
   fi
   
-  # Procurar e adicionar pastas importantes em diversos locais
-  for pasta in "${PASTAS_IMPORTANTES[@]}"; do
-    mostrar_info "Procurando pasta: $pasta..."
-    ENCONTRADA=0
+  # Search and add important folders in various locations
+  for folder in "${IMPORTANT_FOLDERS[@]}"; do
+    show_info "Looking for folder: $folder..."
+    FOUND=0
     
-    # 1. Verificar na raiz da pasta pessoal
-    if [ -d ~/"$pasta" ]; then
-      adicionar_favorito "$pasta" ~/"$pasta"
-      ENCONTRADA=1
+    # 1. Check in home folder root
+    if [ -d ~/"$folder" ]; then
+      add_favorite "$folder" ~/"$folder"
+      FOUND=1
       continue
     fi
     
-    # 2. Verificar em My Drive 
-    if [ -d "$MY_DRIVE_PATH" ] && [ $ENCONTRADA -eq 0 ]; then
-      encontrar_e_adicionar_pasta "$pasta" "$MY_DRIVE_PATH" 2
+    # 2. Check in My Drive 
+    if [ -d "$MY_DRIVE_PATH" ] && [ $FOUND -eq 0 ]; then
+      find_and_add_folder "$folder" "$MY_DRIVE_PATH" 2
       if [ $? -eq 0 ]; then
-        ENCONTRADA=1
+        FOUND=1
         continue
       fi
     fi
     
-    # 3. Busca em Shared Drives com profundidade maior
-    if [ -d "$SHARED_DRIVES_PATH" ] && [ $ENCONTRADA -eq 0 ]; then
-      # Busca mais profunda em Shared Drives
-      encontrar_e_adicionar_pasta "$pasta" "$SHARED_DRIVES_PATH" 3
+    # 3. Search in Shared Drives with greater depth
+    if [ -d "$SHARED_DRIVES_PATH" ] && [ $FOUND -eq 0 ]; then
+      # Deeper search in Shared Drives
+      find_and_add_folder "$folder" "$SHARED_DRIVES_PATH" 3
       if [ $? -eq 0 ]; then
-        ENCONTRADA=1
+        FOUND=1
         continue
       fi
     fi
     
-    # 4. Verificar diretamente nos Shared Drives conhecidos
-    if [ -d "$SHARED_DRIVES_PATH" ] && [ $ENCONTRADA -eq 0 ]; then
+    # 4. Check directly in known Shared Drives
+    if [ -d "$SHARED_DRIVES_PATH" ] && [ $FOUND -eq 0 ]; then
       for drive in "$SHARED_DRIVES_PATH"/*; do
-        if [ -d "$drive/$pasta" ]; then
-          adicionar_favorito "$pasta" "$drive/$pasta"
-          ENCONTRADA=1
+        if [ -d "$drive/$folder" ]; then
+          add_favorite "$folder" "$drive/$folder"
+          FOUND=1
           break
-        elif [ -d "$drive/PUBLICIDADE/$pasta" ]; then
-          adicionar_favorito "$pasta" "$drive/PUBLICIDADE/$pasta"
-          ENCONTRADA=1
+        elif [ -d "$drive/PUBLICIDADE/$folder" ]; then
+          add_favorite "$folder" "$drive/PUBLICIDADE/$folder"
+          FOUND=1
           break
         fi
       done
     fi
     
-    if [ $ENCONTRADA -eq 0 ]; then
-      mostrar_aviso "Pasta '$pasta' não encontrada automaticamente."
+    if [ $FOUND -eq 0 ]; then
+      show_warning "Folder '$folder' not found automatically."
     fi
   done
   
-  # Adicionar pastas padrão do sistema
-  adicionar_favorito "Desktop" "$HOME/Desktop"
-  adicionar_favorito "Downloads" "$HOME/Downloads"
-  adicionar_favorito "Documents" "$HOME/Documents"
-  adicionar_favorito "Applications" "/Applications"
+  # Add standard system folders
+  add_favorite "Desktop" "$HOME/Desktop"
+  add_favorite "Downloads" "$HOME/Downloads"
+  add_favorite "Documents" "$HOME/Documents"
+  add_favorite "Applications" "/Applications"
   
-  # Instruções para método manual (mais confiável)
-  mostrar_info "=====================================================================>"
-  mostrar_info "IMPORTANTE: Se os atalhos não funcionarem corretamente, siga estes passos:"
-  mostrar_info "1. Abra o Finder"
-  mostrar_info "2. No menu da barra lateral, desative 'Recentes'"
-  mostrar_info "3. Para pastas não encontradas, vá até o Google Drive e procure manualmente"
-  mostrar_info "4. Arraste as pastas que quiser para a barra lateral do Finder"
-  mostrar_info "5. Isso criará atalhos funcionais com o formato correto reconhecido pelo macOS"
-  mostrar_info "=====================================================================>"
-  
-  mostrar_sucesso "Favoritos do Google Drive adicionados com sucesso!"
+  show_success "Google Drive favorites added successfully!"
   return 0
 }
 
-# Função para restaurar todos os favoritos a partir de um backup
-restaurar_todos_favoritos() {
-  mostrar_info "Restaurando todos os favoritos da barra lateral do Finder..."
+# Function to restore all favorites from a backup
+restore_all_favorites() {
+  show_info "Restoring all Finder sidebar favorites..."
   
-  # Verificar se mysides está instalado
-  verificar_mysides || return 1
+  # Check if mysides is installed
+  check_mysides || return 1
   
-  # Verificar se existe o backup mais recente
-  ULTIMO_BACKUP="$BACKUP_DIR/Backups/ultimo_backup.txt"
-  ULTIMO_BACKUP_NOMES="$BACKUP_DIR/Backups/ultimo_backup_nomes.txt"
+  # Check if the latest backup exists
+  LATEST_BACKUP="$BACKUP_DIR/Backups/latest_backup.txt"
+  LATEST_BACKUP_NAMES="$BACKUP_DIR/Backups/latest_backup_names.txt"
   
-  if [ ! -f "$ULTIMO_BACKUP" ]; then
-    # Listar todos os backups disponíveis
-    mostrar_info "Backup mais recente não encontrado. Verificando outros backups..."
+  if [ ! -f "$LATEST_BACKUP" ]; then
+    # List all available backups
+    show_info "Latest backup not found. Checking other backups..."
     BACKUPS=$(ls -1 "$BACKUP_DIR/Backups"/finder_favorites_*.txt 2>/dev/null)
     
     if [ -z "$BACKUPS" ]; then
-      mostrar_erro "Nenhum backup encontrado. Faça um backup primeiro."
+      show_error "No backups found. Make a backup first."
       return 1
     fi
     
-    mostrar_info "Backups disponíveis:"
+    show_info "Available backups:"
     echo "$BACKUPS"
     echo ""
-    read -p "Digite o caminho completo do arquivo de backup para restaurar: " RESTORE_FILE
+    read -p "Enter the full path of the backup file to restore: " RESTORE_FILE
     
     if [ ! -f "$RESTORE_FILE" ]; then
-      mostrar_erro "Arquivo não encontrado: $RESTORE_FILE"
+      show_error "File not found: $RESTORE_FILE"
       return 1
     fi
     
-    # Gerar arquivo de nomes a partir do backup selecionado
+    # Generate names file from selected backup
     TEMP_NAMES_FILE="$BACKUP_DIR/Backups/temp_names.txt"
     grep -v "^#" "$RESTORE_FILE" | awk -F " file://" '{print $1}' > "$TEMP_NAMES_FILE"
   else
-    mostrar_info "Usando o backup mais recente: $ULTIMO_BACKUP"
-    RESTORE_FILE="$ULTIMO_BACKUP"
-    TEMP_NAMES_FILE="$ULTIMO_BACKUP_NOMES"
+    show_info "Using the latest backup: $LATEST_BACKUP"
+    RESTORE_FILE="$LATEST_BACKUP"
+    TEMP_NAMES_FILE="$LATEST_BACKUP_NAMES"
     
-    # Gerar novamente o arquivo de nomes para garantir que está correto
+    # Generate names file again to ensure it's correct
     grep -v "^#" "$RESTORE_FILE" | awk -F " file://" '{print $1}' > "$TEMP_NAMES_FILE"
   fi
   
-  # Confirmar a restauração
-  mostrar_aviso "ATENÇÃO: Isto irá remover favoritos existentes e restaurar os do backup."
-  mostrar_info "Favoritos que serão restaurados:"
+  # Confirm restoration
+  show_warning "WARNING: This will remove existing favorites and restore those from the backup."
+  show_info "Favorites that will be restored:"
   grep -v "^#" "$RESTORE_FILE"
   echo ""
-  read -p "Confirma a restauração? (s/n): " CONFIRMA_RESTAURACAO
+  read -p "Confirm restoration? (y/n): " CONFIRM_RESTORE
   
-  if [[ "$CONFIRMA_RESTAURACAO" == "s" || "$CONFIRMA_RESTAURACAO" == "S" ]]; then
-    # Remover favoritos existentes (apenas os que estão no backup para evitar remover outros)
-    mostrar_info "Removendo favoritos existentes..."
-    while read -r nome; do
-      if [ -n "$nome" ]; then
-        mysides remove "$nome" 2>/dev/null
-        echo "Removido: $nome"
+  if [[ "$CONFIRM_RESTORE" == "y" || "$CONFIRM_RESTORE" == "Y" ]]; then
+    # Remove existing favorites (only those in the backup to avoid removing others)
+    show_info "Removing existing favorites..."
+    while read -r name; do
+      if [ -n "$name" ]; then
+        mysides remove "$name" 2>/dev/null
+        echo "Removed: $name"
       fi
     done < "$TEMP_NAMES_FILE"
     
-    # Aguardar um momento para garantir que todos os favoritos foram removidos
+    # Wait a moment to ensure all favorites were removed
     sleep 1
     
-    # Adicionar os favoritos do backup
-    mostrar_info "Restaurando favoritos do backup..."
+    # Add favorites from backup
+    show_info "Restoring favorites from backup..."
     
-    # Encontrar o diretório do Google Drive atual
+    # Find current Google Drive directory
     GOOGLE_DRIVE_DIR=""
     if [ -d ~/Library/CloudStorage ]; then
       GOOGLE_DRIVE_DIR=$(find ~/Library/CloudStorage -maxdepth 1 -name "GoogleDrive-*" -type d | head -1)
     fi
     
-    # Usar grep para evitar linhas de comentário e processar corretamente nomes com espaços
-    grep -v "^#" "$RESTORE_FILE" | while read -r linha; do
-      if [ -n "$linha" ]; then
-        # Extrair nome e caminho
-        nome=$(echo "$linha" | awk -F " file://" '{print $1}')
-        caminho_url=$(echo "$linha" | awk -F " file://" '{print $2}')
+    # Use grep to avoid comment lines and correctly process names with spaces
+    grep -v "^#" "$RESTORE_FILE" | while read -r line; do
+      if [ -n "$line" ]; then
+        # Extract name and path
+        name=$(echo "$line" | awk -F " file://" '{print $1}')
+        path_url=$(echo "$line" | awk -F " file://" '{print $2}')
         
-        # Decodificar a URL para verificar a existência do diretório
-        # Substituir %20 por espaço e outros códigos comuns
-        caminho_decodificado=$(echo "$caminho_url" | 
+        # Decode URL to check if directory exists
+        # Replace %20 with space and other common codes
+        decoded_path=$(echo "$path_url" | 
           perl -pe 's/%20/ /g; s/%([0-9A-F]{2})/chr(hex($1))/gie' 2>/dev/null ||
-          echo "$caminho_url" | sed 's/%20/ /g')
+          echo "$path_url" | sed 's/%20/ /g')
         
-        # Verificar se o caminho existe usando o caminho decodificado
-        if [ -d "$caminho_decodificado" ]; then
-          mostrar_info "Adicionando: $nome -> file://$caminho_url"
-          mysides add "$nome" "file://$caminho_url" 2>/dev/null
-          echo "Adicionado: $nome -> $caminho_decodificado"
+        # Check if path exists using decoded path
+        if [ -d "$decoded_path" ]; then
+          show_info "Adding: $name -> file://$path_url"
+          mysides add "$name" "file://$path_url" 2>/dev/null
+          echo "Added: $name -> $decoded_path"
         else
-          mostrar_aviso "Caminho não encontrado: $caminho_decodificado"
-          mostrar_info "Tentando adicionar $nome diretamente com URL original..."
+          show_warning "Path not found: $decoded_path"
+          show_info "Trying to add $name directly with original URL..."
           
-          # Tentar o método direto usando a URL original
-          mysides add "$nome" "file://$caminho_url" 2>/dev/null
+          # Try direct method using original URL
+          mysides add "$name" "file://$path_url" 2>/dev/null
           
-          # Verificar se foi adicionado
-          if mysides list 2>/dev/null | grep -q "$nome"; then
-            mostrar_sucesso "Favorito adicionado: $nome (usando URL original)"
+          # Check if added
+          if mysides list 2>/dev/null | grep -q "$name"; then
+            show_success "Favorite added: $name (using original URL)"
           else
-            # Tentar método alternativo para pastas específicas
-            if [ "$nome" == "Desktop" ]; then
+            # Try alternative method for specific folders
+            if [ "$name" == "Desktop" ]; then
               mysides add "Desktop" "file:///Users/$(whoami)/Desktop"
-            elif [ "$nome" == "Documents" ]; then
+            elif [ "$name" == "Documents" ]; then
               mysides add "Documents" "file:///Users/$(whoami)/Documents"
-            elif [ "$nome" == "Downloads" ]; then
+            elif [ "$name" == "Downloads" ]; then
               mysides add "Downloads" "file:///Users/$(whoami)/Downloads"
-            elif [ "$nome" == "Applications" ]; then
+            elif [ "$name" == "Applications" ]; then
               mysides add "Applications" "file:///Applications"
-            elif [[ "$nome" == *"BEBA COM MODERAÇÂO"* ]]; then
-              # Tenta localizar esta pasta especial
-              for local in ~/Desktop ~/Documents ~; do
-                if [ -d "$local/BEBA COM MODERAÇÃO" ]; then
-                  mysides add "$nome" "file://$local/BEBA COM MODERAÇÃO"
-                  mostrar_sucesso "Localizado e adicionado: $nome"
+            elif [[ "$name" == *"BEBA COM MODERAÇÂO"* ]]; then
+              # Try to locate this special folder
+              for location in ~/Desktop ~/Documents ~; do
+                if [ -d "$location/BEBA COM MODERAÇÃO" ]; then
+                  mysides add "$name" "file://$location/BEBA COM MODERAÇÃO"
+                  show_success "Located and added: $name"
                   break
                 fi
               done
             else
-              # Tentar encontrar a pasta por nome
-              local_encontrado=$(find ~ -maxdepth 3 -type d -name "$nome" -print -quit 2>/dev/null)
-              if [ -n "$local_encontrado" ]; then
-                mysides add "$nome" "file://$local_encontrado"
-                mostrar_sucesso "Localizado e adicionado: $nome em $local_encontrado"
+              # Try to find folder by name
+              found_location=$(find ~ -maxdepth 3 -type d -name "$name" -print -quit 2>/dev/null)
+              if [ -n "$found_location" ]; then
+                mysides add "$name" "file://$found_location"
+                show_success "Located and added: $name at $found_location"
               else
-                mostrar_erro "Não foi possível adicionar $nome"
+                show_error "Could not add $name"
               fi
             fi
           fi
@@ -668,61 +658,51 @@ restaurar_todos_favoritos() {
       fi
     done
     
-    # Instruções para método manual (mais confiável)
-    mostrar_info "=====================================================================>"
-    mostrar_info "IMPORTANTE: Se os atalhos não funcionarem corretamente, siga estes passos:"
-    mostrar_info "1. Abra o Finder"
-    mostrar_info "2. No menu da barra lateral, desative 'Recentes'"
-    mostrar_info "3. Navegue até as pastas que deseja adicionar"
-    mostrar_info "4. Arraste-as para a barra lateral do Finder"
-    mostrar_info "5. Isso criará atalhos funcionais com o formato correto reconhecido pelo macOS"
-    mostrar_info "=====================================================================>"
-    
-    mostrar_sucesso "Favoritos restaurados com sucesso!"
+    show_success "Favorites restored successfully!"
     return 0
   else
-    mostrar_info "Restauração cancelada pelo usuário."
+    show_info "Restoration cancelled by user."
     return 1
   fi
 }
 
-# Função para realizar todo o processo (backup, limpeza e restauração)
-processo_completo() {
-  mostrar_info "Iniciando o processo completo (backup, limpeza e restauração)..."
+# Function to perform the complete process (backup, cleanup and restoration)
+complete_process() {
+  show_info "Starting the complete process (backup, cleanup and restoration)..."
   
-  # Verificar se mysides está instalado
-  verificar_mysides || return 1
+  # Check if mysides is installed
+  check_mysides || return 1
   
-  # 1. Fazer backup dos favoritos
-  mostrar_info "Passo 1: Fazendo backup dos favoritos..."
-  backup_favoritos
+  # 1. Backup favorites
+  show_info "Step 1: Backing up favorites..."
+  backup_favorites
   
-  # 2. Confirmar continuação
+  # 2. Confirm continuation
   echo ""
-  mostrar_aviso "ATENÇÃO: O próximo passo irá limpar o cache do Google Drive."
-  read -p "Deseja continuar com a limpeza do cache? (s/n): " CONTINUAR_LIMPEZA
+  show_warning "WARNING: The next step will clear Google Drive cache."
+  read -p "Do you want to continue with cache cleanup? (y/n): " CONTINUE_CLEANUP
   
-  if [[ "$CONTINUAR_LIMPEZA" != "s" && "$CONTINUAR_LIMPEZA" != "S" ]]; then
-    mostrar_info "Processo interrompido pelo usuário após o backup."
+  if [[ "$CONTINUE_CLEANUP" != "y" && "$CONTINUE_CLEANUP" != "Y" ]]; then
+    show_info "Process interrupted by user after backup."
     return 0
   fi
   
-  # 3. Limpar o cache
-  mostrar_info "Passo 2: Limpando o cache do Google Drive..."
-  limpar_cache
+  # 3. Clean cache
+  show_info "Step 2: Cleaning Google Drive cache..."
+  clean_cache
   
-  # 4. Adicionar favoritos do Google Drive
-  mostrar_info "Passo 3: Restaurando favoritos do Google Drive..."
-  adicionar_favoritos_google_drive
+  # 4. Add Google Drive favorites
+  show_info "Step 3: Restoring Google Drive favorites..."
+  add_google_drive_favorites
   
-  mostrar_sucesso "Processo completo finalizado com sucesso!"
-  mostrar_info "Se deseja restaurar todos os favoritos (não apenas os do Google Drive), use a opção 4 do menu principal."
+  show_success "Complete process finished successfully!"
+  show_info "If you want to restore all favorites (not just Google Drive ones), use option 4 in the main menu."
   return 0
 }
 
-# Menu principal
-exibir_menu() {
-  mostrar_cabecalho
+# Main menu
+display_menu() {
+  show_header
   echo "Choose an option:"
   echo ""
   echo "1. Complete process (backup, cleanup and Google Drive restoration)"
@@ -732,37 +712,37 @@ exibir_menu() {
   echo "5. Add only Google Drive favorites"
   echo "6. Exit"
   echo ""
-  read -p "Enter your choice (1-6): " OPCAO
+  read -p "Enter your choice (1-6): " OPTION
   
-  case $OPCAO in
+  case $OPTION in
     1)
-      processo_completo
+      complete_process
       ;;
     2)
-      backup_favoritos
+      backup_favorites
       ;;
     3)
-      limpar_cache
+      clean_cache
       ;;
     4)
-      restaurar_todos_favoritos
+      restore_all_favorites
       ;;
     5)
-      adicionar_favoritos_google_drive
+      add_google_drive_favorites
       ;;
     6)
-      mostrar_info "Exiting..."
+      show_info "Exiting..."
       exit 0
       ;;
     *)
-      mostrar_erro "Invalid option!"
+      show_error "Invalid option!"
       ;;
   esac
   
   echo ""
   read -p "Press Enter to return to the main menu..."
-  exibir_menu
+  display_menu
 }
 
-# Iniciar o programa
-exibir_menu 
+# Start the program
+display_menu 
