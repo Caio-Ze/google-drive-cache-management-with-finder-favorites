@@ -1,4 +1,4 @@
-# Google Drive Manager
+# Google Drive Cache Management with Finder Favorites Backup and Preservation
 
 Script to manage Google Drive cache and Finder sidebar favorites on macOS.
 
