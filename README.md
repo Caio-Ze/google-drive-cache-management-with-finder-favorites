@@ -62,10 +62,20 @@ chmod +x google_drive_manager_fixed.sh
 - Added version tracking with Git
 - Published on GitHub for better version control and sharing
 
+## Contributing
+
+Contributions to improve the script are welcome! Feel free to:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
 ## License
 
-This script is provided "as is", without warranties.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Author
 
-Created to manage Google Drive and its Finder favorites. 
+Created by Caio Raphael to manage Google Drive cache and preserve Finder favorites on macOS. 
