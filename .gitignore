@@ -1,21 +1,21 @@
-# Arquivos temporários do sistema
+# System temporary files
 .DS_Store
 .Spotlight-V100
 .Trashes
 ._*
 
-# Arquivos de swap do vim
+# Vim swap files
 *.swp
 *.swo
 
-# Backups e logs
+# Backups and logs
 *~
 *.log
 *.bak
 
-# Scripts antigos
+# Old scripts
 scripts_antigos/
 
-# Arquivos específicos que não queremos versionar
-# Pasta de backups do Google Drive Manager (opcional, remova se quiser versionar os backups)
+# Specific files we don't want to version control
+# Google Drive Manager backup folder (optional, remove if you want to version control the backups)
 # ~/Desktop/Google_Drive_Manager/Backups/ 

@@ -1,56 +1,56 @@
 # Google Drive Manager
 
-Script para gerenciar o cache do Google Drive e os favoritos da barra lateral do Finder no macOS.
+Script to manage Google Drive cache and Finder sidebar favorites on macOS.
 
-## Funcionalidades
+## Features
 
-- Backup dos favoritos da barra lateral do Finder
-- Limpeza do cache do Google Drive
-- Restauração dos favoritos após limpeza
-- Adição automática de favoritos importantes do Google Drive
+- Backup of Finder sidebar favorites
+- Google Drive cache cleanup
+- Restoration of favorites after cleanup
+- Automatic addition of important Google Drive favorites
 
-## Requisitos
+## Requirements
 
 - macOS
-- Homebrew (opcional, para instalar o mysides)
-- Ferramenta `mysides` (será instalada automaticamente se necessário)
+- Homebrew (optional, for installing mysides)
+- `mysides` tool (will be automatically installed if necessary)
 
-## Uso
+## Usage
 
-1. Torne o script executável:
+1. Make the script executable:
 ```bash
 chmod +x google_drive_manager_fixed.sh
 ```
 
-2. Execute o script:
+2. Run the script:
 ```bash
 ./google_drive_manager_fixed.sh
 ```
 
-3. Siga as instruções no menu interativo:
-   - Opção 1: Processo completo (backup, limpeza e restauração)
-   - Opção 2: Fazer backup dos favoritos do Finder
-   - Opção 3: Limpar cache do Google Drive
-   - Opção 4: Restaurar favoritos do backup
-   - Opção 5: Adicionar apenas favoritos do Google Drive
-   - Opção 6: Sair
+3. Follow the instructions in the interactive menu:
+   - Option 1: Complete process (backup, cleanup, and restoration)
+   - Option 2: Backup Finder favorites
+   - Option 3: Clean Google Drive cache
+   - Option 4: Restore favorites from backup
+   - Option 5: Add only Google Drive favorites
+   - Option 6: Exit
 
-## Observações
+## Notes
 
-- Os backups são salvos em `~/Desktop/Google_Drive_Manager/Backups/`
-- A restauração usa o backup mais recente por padrão
-- Caso haja problemas com a restauração automática, o script fornece instruções para adicionar favoritos manualmente
+- Backups are saved in `~/Desktop/Google_Drive_Manager/Backups/`
+- Restoration uses the most recent backup by default
+- If there are issues with automatic restoration, the script provides instructions for manually adding favorites
 
-## Versões
+## Versions
 
-- **v1.0**: Versão inicial com funcionalidades básicas
-- **v1.1**: Correção do problema de "segmentation fault" com o mysides
-- **v1.2**: Melhorias na decodificação de URLs e suporte a caracteres especiais
+- **v1.0**: Initial version with basic features
+- **v1.1**: Fixed "segmentation fault" issue with mysides
+- **v1.2**: Improvements in URL decoding and support for special characters
 
-## Licença
+## License
 
-Este script é fornecido "como está", sem garantias.
+This script is provided "as is", without warranties.
 
-## Autor
+## Author
 
-Criado para gerenciar o Google Drive e seus favoritos do Finder. 
+Created to manage Google Drive and its Finder favorites. 

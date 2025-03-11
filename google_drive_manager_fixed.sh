@@ -23,7 +23,7 @@ function mostrar_erro {
 function mostrar_cabecalho {
   clear
   echo -e "\033[1;36m===================================================\033[0m"
-  echo -e "\033[1;36m  Gerenciador de Google Drive e Favoritos do Finder  \033[0m"
+  echo -e "\033[1;36m  Google Drive and Finder Favorites Manager  \033[0m"
   echo -e "\033[1;36m===================================================\033[0m"
   echo ""
 }
@@ -723,16 +723,16 @@ processo_completo() {
 # Menu principal
 exibir_menu() {
   mostrar_cabecalho
-  echo "Escolha uma opção:"
+  echo "Choose an option:"
   echo ""
-  echo "1. Processo completo (backup, limpeza e restauração do Google Drive)"
-  echo "2. Fazer backup dos favoritos do Finder"
-  echo "3. Limpar cache do Google Drive"
-  echo "4. Restaurar todos os favoritos do backup"
-  echo "5. Adicionar apenas favoritos do Google Drive"
-  echo "6. Sair"
+  echo "1. Complete process (backup, cleanup and Google Drive restoration)"
+  echo "2. Backup Finder favorites"
+  echo "3. Clean Google Drive cache"
+  echo "4. Restore all favorites from backup"
+  echo "5. Add only Google Drive favorites"
+  echo "6. Exit"
   echo ""
-  read -p "Digite sua escolha (1-6): " OPCAO
+  read -p "Enter your choice (1-6): " OPCAO
   
   case $OPCAO in
     1)
@@ -751,16 +751,16 @@ exibir_menu() {
       adicionar_favoritos_google_drive
       ;;
     6)
-      mostrar_info "Saindo..."
+      mostrar_info "Exiting..."
       exit 0
       ;;
     *)
-      mostrar_erro "Opção inválida!"
+      mostrar_erro "Invalid option!"
       ;;
   esac
   
   echo ""
-  read -p "Pressione Enter para voltar ao menu principal..."
+  read -p "Press Enter to return to the main menu..."
   exibir_menu
 }
 
