@@ -84,10 +84,16 @@ backup_favorites() {
   # Use mysides list to get existing favorites
   # Redirect stderr to avoid errors interrupting the process
   TEMP_MYSIDES_OUTPUT=$(mktemp)
-  mysides list 2>/dev/null > "$TEMP_MYSIDES_OUTPUT"
+  
+  # Try to run mysides with error handling
+  if ! mysides list > "$TEMP_MYSIDES_OUTPUT" 2>/dev/null; then
+    show_warning "mysides command failed with an error (possibly segmentation fault)."
+    rm -f "$TEMP_MYSIDES_OUTPUT"
+    TEMP_MYSIDES_OUTPUT=""
+  fi
   
   # Check if we were able to get the favorites list
-  if [ -s "$TEMP_MYSIDES_OUTPUT" ]; then
+  if [ -n "$TEMP_MYSIDES_OUTPUT" ] && [ -s "$TEMP_MYSIDES_OUTPUT" ]; then
     # Process each line of output
     while read -r line; do
       # Check if the line contains an arrow (->)
@@ -105,8 +111,12 @@ backup_favorites() {
     done < "$TEMP_MYSIDES_OUTPUT"
     
     show_success "Favorites extracted directly from the sidebar!"
+    
+    # Clean up
+    [ -f "$TEMP_MYSIDES_OUTPUT" ] && rm -f "$TEMP_MYSIDES_OUTPUT"
   else
     show_warning "Could not get favorites list using mysides list."
+    [ -f "$TEMP_MYSIDES_OUTPUT" ] && rm -f "$TEMP_MYSIDES_OUTPUT"
     
     # If we can't use mysides list, try the alternative method
     show_info "Using alternative method to identify important favorites..."
@@ -230,9 +240,6 @@ backup_favorites() {
     fi
   fi
   
-  # Clean up temporary file
-  rm -f "$TEMP_MYSIDES_OUTPUT"
-  
   # Extract only the names of favorites for later use
   NAMES_FILE="$BACKUP_DIR/Backups/finder_favorites_names_$(date +%Y%m%d_%H%M%S).txt"
   grep -v "^#" "$BACKUP_FILE" | awk -F " file:" '{print $1}' > "$NAMES_FILE"
@@ -240,7 +247,7 @@ backup_favorites() {
   # Check if backup was created successfully
   if [ -s "$BACKUP_FILE" ]; then
     show_success "Favorites backup created successfully!"
-    echo "Saved favorites:"
+    echo ""
     cat "$BACKUP_FILE"
     echo ""
     show_info "The complete backup was saved to: $BACKUP_FILE"
@@ -248,10 +255,20 @@ backup_favorites() {
     ln -sf "$BACKUP_FILE" "$BACKUP_DIR/Backups/latest_backup.txt"
     ln -sf "$NAMES_FILE" "$BACKUP_DIR/Backups/latest_backup_names.txt"
     show_success "Links to the latest backup created."
-    return 0
+    
+    # Debug information
+    show_info "DEBUG: Verifying backup files exist:"
+    ls -la "$BACKUP_DIR/Backups/latest_backup.txt" "$BACKUP_DIR/Backups/latest_backup_names.txt" 2>/dev/null || show_warning "Backup links not found!"
+    ls -la "$BACKUP_FILE" "$NAMES_FILE" 2>/dev/null || show_warning "Original backup files not found!"
   else
     show_error "Could not create favorites backup or the list is empty."
-    return 1
+  fi
+  
+  # Ask if user wants to return to menu
+  echo ""
+  read -p "Return to main menu? (y/n, default: y): " RETURN_TO_MENU
+  if [[ "$RETURN_TO_MENU" != "n" && "$RETURN_TO_MENU" != "N" ]]; then
+    return 0
   fi
 }
 
@@ -305,6 +322,13 @@ clean_cache() {
   echo ""
   
   show_success "Google Drive cache cleared successfully!"
+  
+  # Ask if user wants to return to menu
+  echo ""
+  read -p "Return to main menu? (y/n, default: y): " RETURN_TO_MENU
+  if [[ "$RETURN_TO_MENU" != "n" && "$RETURN_TO_MENU" != "N" ]]; then
+    return 0
+  fi
   return 0
 }
 
@@ -524,6 +548,13 @@ add_google_drive_favorites() {
   add_favorite "Applications" "/Applications"
   
   show_success "Google Drive favorites added successfully!"
+  
+  # Ask if user wants to return to menu
+  echo ""
+  read -p "Return to main menu? (y/n, default: y): " RETURN_TO_MENU
+  if [[ "$RETURN_TO_MENU" != "n" && "$RETURN_TO_MENU" != "N" ]]; then
+    return 0
+  fi
   return 0
 }
 
@@ -538,36 +569,59 @@ restore_all_favorites() {
   LATEST_BACKUP="$BACKUP_DIR/Backups/latest_backup.txt"
   LATEST_BACKUP_NAMES="$BACKUP_DIR/Backups/latest_backup_names.txt"
   
+  # Debug information
+  show_info "DEBUG: Looking for backup files:"
+  show_info "Latest backup path: $LATEST_BACKUP"
+  ls -la "$BACKUP_DIR/Backups/" 2>/dev/null || show_warning "Backup directory not found or empty!"
+  
   if [ ! -f "$LATEST_BACKUP" ]; then
     # List all available backups
     show_info "Latest backup not found. Checking other backups..."
-    BACKUPS=$(ls -1 "$BACKUP_DIR/Backups"/finder_favorites_*.txt 2>/dev/null)
+    BACKUPS=$(find "$BACKUP_DIR/Backups" -name "finder_favorites_*.txt" -type f 2>/dev/null)
     
     if [ -z "$BACKUPS" ]; then
       show_error "No backups found. Make a backup first."
+      
+      # Ask if user wants to return to menu
+      echo ""
+      read -p "Return to main menu? (y/n, default: y): " RETURN_TO_MENU
+      if [[ "$RETURN_TO_MENU" != "n" && "$RETURN_TO_MENU" != "N" ]]; then
+        return 0
+      fi
       return 1
     fi
     
     show_info "Available backups:"
     echo "$BACKUPS"
     echo ""
-    read -p "Enter the full path of the backup file to restore: " RESTORE_FILE
+    read -p "Enter the full path of the backup file to restore (or 'menu' to return to menu): " RESTORE_FILE
+    
+    if [[ "$RESTORE_FILE" == "menu" ]]; then
+      return 0
+    fi
     
     if [ ! -f "$RESTORE_FILE" ]; then
       show_error "File not found: $RESTORE_FILE"
+      
+      # Ask if user wants to return to menu
+      echo ""
+      read -p "Return to main menu? (y/n, default: y): " RETURN_TO_MENU
+      if [[ "$RETURN_TO_MENU" != "n" && "$RETURN_TO_MENU" != "N" ]]; then
+        return 0
+      fi
       return 1
     fi
     
     # Generate names file from selected backup
     TEMP_NAMES_FILE="$BACKUP_DIR/Backups/temp_names.txt"
-    grep -v "^#" "$RESTORE_FILE" | awk -F " file://" '{print $1}' > "$TEMP_NAMES_FILE"
+    grep -v "^#" "$RESTORE_FILE" | awk -F " file:" '{print $1}' > "$TEMP_NAMES_FILE"
   else
     show_info "Using the latest backup: $LATEST_BACKUP"
     RESTORE_FILE="$LATEST_BACKUP"
     TEMP_NAMES_FILE="$LATEST_BACKUP_NAMES"
     
     # Generate names file again to ensure it's correct
-    grep -v "^#" "$RESTORE_FILE" | awk -F " file://" '{print $1}' > "$TEMP_NAMES_FILE"
+    grep -v "^#" "$RESTORE_FILE" | awk -F " file:" '{print $1}' > "$TEMP_NAMES_FILE"
   fi
   
   # Confirm restoration
@@ -575,7 +629,11 @@ restore_all_favorites() {
   show_info "Favorites that will be restored:"
   grep -v "^#" "$RESTORE_FILE"
   echo ""
-  read -p "Confirm restoration? (y/n): " CONFIRM_RESTORE
+  read -p "Confirm restoration? (y/n, or 'menu' to return to menu): " CONFIRM_RESTORE
+  
+  if [[ "$CONFIRM_RESTORE" == "menu" ]]; then
+    return 0
+  fi
   
   if [[ "$CONFIRM_RESTORE" == "y" || "$CONFIRM_RESTORE" == "Y" ]]; then
     # Remove existing favorites (only those in the backup to avoid removing others)
@@ -700,6 +758,13 @@ complete_process() {
   
   show_success "Complete process finished successfully!"
   show_info "If you want to restore all favorites (not just Google Drive ones), use option 4 in the main menu."
+  
+  # Ask if user wants to return to menu
+  echo ""
+  read -p "Return to main menu? (y/n, default: y): " RETURN_TO_MENU
+  if [[ "$RETURN_TO_MENU" != "n" && "$RETURN_TO_MENU" != "N" ]]; then
+    return 0
+  fi
   return 0
 }
 
