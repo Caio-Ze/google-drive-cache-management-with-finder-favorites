@@ -122,20 +122,20 @@ backup_favorites() {
       
       # Simple array of folders to check
       IMPORTANT_FOLDERS=(
-        "CARREFOUR"
-        "14_783_230669_SEXTA"
-        "COMPARTILHADO"
-        "FILMES"
-        "BEBA COM MODERACAO"
-        "SCRIPT BOUNCE"
-        "BACKUP"
-        "APLICATIOVS_CZ"
-        "PYTHON_PROJECTS"
-        "caio.raphael"
-        "DynamicBounceMonitor"
-        "DynamicBounceMonitor_V4"
-        "DIA SUPERMERCADOS"
-        "TV"
+        "Work_Documents"
+        "Project_Files"
+        "Shared_Team_Folder"
+        "Media_Files"
+        "Important_Resources"
+        "Scripts"
+        "Backups"
+        "Applications"
+        "Development_Projects"
+        "Personal_Files"
+        "Monitoring_Tools"
+        "Reports"
+        "Client_Projects"
+        "Media_Library"
       )
       
       # Helper function to register found folder
@@ -345,17 +345,20 @@ add_google_drive_favorites() {
   
   # List of important folders to check
   IMPORTANT_FOLDERS=(
-    "CARREFOUR"
-    "14_783_230669_SEXTA"
-    "COMPARTILHADO"
-    "FILMES"
-    "BEBA COM MODERACAO"
-    "SCRIPT BOUNCE"
-    "BACKUP"
-    "APLICATIOVS_CZ"
-    "PYTHON_PROJECTS"
-    "caio.raphael"
-    "DynamicBounceMonitor"
+    "Work_Documents"
+    "Project_Files"
+    "Shared_Team_Folder"
+    "Media_Files"
+    "Important_Resources"
+    "Scripts"
+    "Backups"
+    "Applications"
+    "Development_Projects"
+    "Personal_Files"
+    "Monitoring_Tools"
+    "Reports"
+    "Client_Projects"
+    "Media_Library"
   )
   
   # First, remove existing duplicate or partial entries
@@ -634,11 +637,11 @@ restore_all_favorites() {
               mysides add "Downloads" "file:///Users/$(whoami)/Downloads"
             elif [ "$name" == "Applications" ]; then
               mysides add "Applications" "file:///Applications"
-            elif [[ "$name" == *"BEBA COM MODERAÇÂO"* ]]; then
+            elif [[ "$name" == *"Special_Characters_Folder"* ]]; then
               # Try to locate this special folder
               for location in ~/Desktop ~/Documents ~; do
-                if [ -d "$location/BEBA COM MODERAÇÃO" ]; then
-                  mysides add "$name" "file://$location/BEBA COM MODERAÇÃO"
+                if [ -d "$location/Special Characters Folder" ]; then
+                  mysides add "$name" "file://$location/Special Characters Folder"
                   show_success "Located and added: $name"
                   break
                 fi
