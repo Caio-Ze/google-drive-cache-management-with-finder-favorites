@@ -2,6 +2,14 @@
 
 Script to manage Google Drive cache and Finder sidebar favorites on macOS.
 
+## Why This Project Is Unique
+
+This project offers a specialized end-to-end workflow that combines multiple functionalities:
+- Backup of Finder sidebar favorites before cleanup
+- Google Drive cache cleanup optimization
+- Restoration of favorites after cleanup
+- Automatic addition of important Google Drive favorites
+
 ## Features
 
 - Backup of Finder sidebar favorites

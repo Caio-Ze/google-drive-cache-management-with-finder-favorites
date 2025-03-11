@@ -1,4 +1,4 @@
-# System temporary files
+# System files
 .DS_Store
 .Spotlight-V100
 .Trashes
@@ -13,7 +13,7 @@
 *.log
 *.bak
 
-# Old scripts
+# Old scripts (excluded for privacy)
 scripts_antigos/
 
 # Specific files we don't want to version control
