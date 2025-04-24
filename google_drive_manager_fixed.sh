@@ -194,8 +194,8 @@ backup_favorites() {
       
       # Check folders in user's home directory
       for folder in "${IMPORTANT_FOLDERS[@]}"; do
-        if [ -d ~ /"$folder" ]; then
-          add_folder_to_backup "$folder" "/Users/$(whoami)/$folder" "home folder"
+        if [ -d ~/"$folder" ]; then
+          add_folder_to_backup "$folder" "$HOME/$folder" "home folder"
           FOLDERS_FOUND+=("$folder")
         fi
       done
@@ -498,8 +498,8 @@ add_google_drive_favorites() {
     FOUND=0
     
     # 1. Check in home folder root
-    if [ -d ~ /"$folder" ]; then
-      add_favorite_sidebartool "$folder" ~ /"$folder"
+    if [ -d ~/"$folder" ]; then
+      add_favorite_sidebartool "$folder" ~/"$folder"
       FOUND=1
       continue
     fi
