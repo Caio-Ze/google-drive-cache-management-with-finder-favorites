@@ -20,8 +20,8 @@ This project offers a specialized end-to-end workflow that combines multiple fun
 ## Requirements
 
 - macOS
-- Homebrew (optional, for installing mysides)
-- `mysides` tool (will be automatically installed if necessary)
+- Xcode Command Line Tools (for installing sidebartool)
+- `sidebartool` (Script will offer to install it if necessary)
 
 ## Compatibility
 

@@ -28,35 +28,56 @@ function show_header {
   echo ""
 }
 
-# Check if mysides is installed
-check_mysides() {
-  if ! command -v mysides &> /dev/null; then
-    show_warning "The 'mysides' tool is not installed."
+# Check if sidebartool is installed
+check_sidebartool() {
+  if ! command -v sidebartool &> /dev/null; then
+    show_warning "The 'sidebartool' is not installed."
     show_info "This tool is necessary to manage Finder favorites."
-    show_info "You can install it using Homebrew with: brew install mysides"
-    
-    # Ask if the user wants to install Homebrew and mysides
-    read -p "Do you want to install Homebrew and mysides now? (y/n): " INSTALL
+    show_info "Installation requires Xcode Command Line Tools."
+    show_info "Steps:"
+    show_info "1. Ensure Xcode Command Line Tools are installed: xcode-select --install"
+    show_info "2. Clone the repository: git clone https://github.com/andrewzirkel/sidebartool.git ~/sidebartool_src"
+    show_info "3. Build and install: cd ~/sidebartool_src && sudo xcodebuild install DSTROOT=/"
+    show_info "   (You might need to adjust the install path depending on your system)"
+    show_info "4. Clean up (optional): cd ~ && rm -rf ~/sidebartool_src"
+
+    read -p "Do you want to attempt installation now? (Requires Xcode tools and sudo) (y/n): " INSTALL
     if [[ "$INSTALL" == "y" || "$INSTALL" == "Y" ]]; then
-      show_info "Installing Homebrew..."
-      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      show_info "Attempting to install sidebartool..."
+      if ! command -v xcodebuild &> /dev/null; then
+          show_error "Xcode Command Line Tools not found. Please install them first (xcode-select --install)."
+          return 1
+      fi
+      git clone https://github.com/andrewzirkel/sidebartool.git ~/sidebartool_src
+      if [ $? -ne 0 ]; then show_error "Failed to clone repository."; return 1; fi
+      cd ~/sidebartool_src
+      # Using sudo for install - requires user password
+      sudo xcodebuild install DSTROOT=/ 
+      if [ $? -ne 0 ]; then 
+          show_error "sidebartool build/install failed. Please check output and try manually."; 
+          cd ~
+          return 1
+      fi
+      cd ~
+      # Optional cleanup
+      # rm -rf ~/sidebartool_src 
       
-      show_info "Installing mysides..."
-      brew install mysides
-      
-      if ! command -v mysides &> /dev/null; then
-        show_error "Failed to install mysides. Please install it manually."
+      if ! command -v sidebartool &> /dev/null; then
+        show_error "sidebartool still not found after installation attempt. Please check manually."
         return 1
       else
-        show_success "mysides installed successfully!"
+        show_success "sidebartool installed successfully! (Installed to /usr/local/bin/sidebartool)"
       fi
     else
-      show_info "Please install mysides manually to use the favorites management features."
+      show_error "Please install sidebartool manually to use the favorites management features."
       return 1
     fi
   fi
   return 0
 }
+
+# Alias the check function for places where it was called check_mysides
+alias check_mysides=check_sidebartool
 
 # Create necessary directories
 create_directories() {
@@ -81,44 +102,47 @@ backup_favorites() {
   
   show_info "Getting favorites directly from the Finder sidebar..."
   
-  # Use mysides list to get existing favorites
-  # Redirect stderr to avoid errors interrupting the process
-  TEMP_MYSIDES_OUTPUT=$(mktemp)
+  # Use sidebartool list to get existing favorite names
+  TEMP_SIDEBARTOOL_OUTPUT=$(mktemp)
+  show_info "DEBUG: Created temporary file for sidebartool output: $TEMP_SIDEBARTOOL_OUTPUT"
   
-  # Try to run mysides with error handling
-  if ! mysides list > "$TEMP_MYSIDES_OUTPUT" 2>/dev/null; then
-    show_warning "mysides command failed with an error (possibly segmentation fault)."
-    rm -f "$TEMP_MYSIDES_OUTPUT"
-    TEMP_MYSIDES_OUTPUT=""
+  show_info "DEBUG: Attempting to run 'sidebartool list'..."
+  sidebartool list > "$TEMP_SIDEBARTOOL_OUTPUT" 2>/dev/null
+  SIDEBARTOOL_EXIT_CODE=$?
+  show_info "DEBUG: 'sidebartool list' command finished with exit code: $SIDEBARTOOL_EXIT_CODE"
+  
+  if [ $SIDEBARTOOL_EXIT_CODE -ne 0 ]; then
+    show_warning "sidebartool command failed with exit code $SIDEBARTOOL_EXIT_CODE."
+    if [ -s "$TEMP_SIDEBARTOOL_OUTPUT" ]; then
+        show_info "DEBUG: Contents of temp file (even on error):"
+        cat "$TEMP_SIDEBARTOOL_OUTPUT"
+    else
+        show_info "DEBUG: Temp file is empty on error."
+    fi
+    rm -f "$TEMP_SIDEBARTOOL_OUTPUT"
+    TEMP_SIDEBARTOOL_OUTPUT=""
   fi
   
   # Check if we were able to get the favorites list
-  if [ -n "$TEMP_MYSIDES_OUTPUT" ] && [ -s "$TEMP_MYSIDES_OUTPUT" ]; then
-    # Process each line of output
-    while read -r line; do
-      # Check if the line contains an arrow (->)
-      if [[ "$line" == *"->"* ]]; then
-        # Extract name and path
-        name=$(echo "$line" | awk -F "->" '{print $1}' | xargs)
-        path=$(echo "$line" | awk -F "->" '{print $2}' | xargs)
-        
-        # Verify we have valid name and path
-        if [ -n "$name" ] && [ -n "$path" ]; then
-          echo "$name $path" >> "$BACKUP_FILE"
-          show_success "Added to backup: $name"
-        fi
-      fi
-    done < "$TEMP_MYSIDES_OUTPUT"
+  show_info "DEBUG: Checking if temp file exists and is not empty..."
+  if [ -n "$TEMP_SIDEBARTOOL_OUTPUT" ] && [ -s "$TEMP_SIDEBARTOOL_OUTPUT" ]; then
+    show_success "DEBUG: sidebartool list succeeded. Processing output..."
+    show_info "DEBUG: Contents of temp file (list of names):"
+    cat "$TEMP_SIDEBARTOOL_OUTPUT"
     
-    show_success "Favorites extracted directly from the sidebar!"
+    # Write names to backup file (used for removal during restore)
+    cp "$TEMP_SIDEBARTOOL_OUTPUT" "$BACKUP_FILE"
+    show_success "Favorite names backed up for removal reference."
     
     # Clean up
-    [ -f "$TEMP_MYSIDES_OUTPUT" ] && rm -f "$TEMP_MYSIDES_OUTPUT"
+    show_info "DEBUG: Removing temp file: $TEMP_SIDEBARTOOL_OUTPUT"
+    [ -f "$TEMP_SIDEBARTOOL_OUTPUT" ] && rm -f "$TEMP_SIDEBARTOOL_OUTPUT"
   else
-    show_warning "Could not get favorites list using mysides list."
-    [ -f "$TEMP_MYSIDES_OUTPUT" ] && rm -f "$TEMP_MYSIDES_OUTPUT"
+    show_warning "Could not get favorites list using sidebartool list (either failed or produced no output)."
+    show_info "DEBUG: Proceeding with fallback method for path backup."
+    [ -f "$TEMP_SIDEBARTOOL_OUTPUT" ] && rm -f "$TEMP_SIDEBARTOOL_OUTPUT" # Ensure cleanup
     
-    # If we can't use mysides list, try the alternative method
+    # Fallback method: Use defined folders to create a backup with paths
     show_info "Using alternative method to identify important favorites..."
     
     # Find the Google Drive directory
@@ -170,7 +194,7 @@ backup_favorites() {
       
       # Check folders in user's home directory
       for folder in "${IMPORTANT_FOLDERS[@]}"; do
-        if [ -d ~/"$folder" ]; then
+        if [ -d ~ /"$folder" ]; then
           add_folder_to_backup "$folder" "/Users/$(whoami)/$folder" "home folder"
           FOLDERS_FOUND+=("$folder")
         fi
@@ -242,7 +266,12 @@ backup_favorites() {
   
   # Extract only the names of favorites for later use
   NAMES_FILE="$BACKUP_DIR/Backups/finder_favorites_names_$(date +%Y%m%d_%H%M%S).txt"
-  grep -v "^#" "$BACKUP_FILE" | awk -F " file:" '{print $1}' > "$NAMES_FILE"
+  # If the backup file contains paths (from fallback), extract names
+  if grep -q " file://" "$BACKUP_FILE"; then
+    grep -v "^#" "$BACKUP_FILE" | awk -F " file://" '{print $1}' > "$NAMES_FILE"
+  else # Otherwise, assume it contains only names (from sidebartool list)
+    grep -v "^#" "$BACKUP_FILE" > "$NAMES_FILE"
+  fi
   
   # Check if backup was created successfully
   if [ -s "$BACKUP_FILE" ]; then
@@ -336,8 +365,8 @@ clean_cache() {
 add_google_drive_favorites() {
   show_info "Adding Google Drive favorites..."
   
-  # Check if mysides is installed
-  check_mysides || return 1
+  # Check if sidebartool is installed
+  check_sidebartool || return 1
   
   # Find Google Drive directory
   GOOGLE_DRIVE_DIR=""
@@ -386,75 +415,48 @@ add_google_drive_favorites() {
   )
   
   # First, remove existing duplicate or partial entries
-  show_info "Removing existing duplicate or partial entries..."
+  show_info "Removing existing duplicate or partial entries using sidebartool..."
   
-  # Remove basic Google Drive entries
-  mysides remove "My" 2>/dev/null
-  mysides remove "My Drive" 2>/dev/null
-  mysides remove "Shared" 2>/dev/null
-  mysides remove "Shared drives" 2>/dev/null
+  # Remove basic Google Drive entries (use actual names if known, otherwise this is speculative)
+  sidebartool remove "My" 2>/dev/null
+  sidebartool remove "My Drive" 2>/dev/null
+  sidebartool remove "Shared" 2>/dev/null
+  sidebartool remove "Shared drives" 2>/dev/null
   
   # Remove all potentially already existing important folders
   for folder in "${IMPORTANT_FOLDERS[@]}"; do
-    mysides remove "$folder" 2>/dev/null
+    sidebartool remove "$folder" 2>/dev/null
     echo "Removed (if existed): $folder"
   done
   
-  # Wait a moment to ensure all favorites are removed
-  sleep 2
+  # Also remove standard system folders if they exist
+  sidebartool remove "Desktop" 2>/dev/null
+  sidebartool remove "Downloads" 2>/dev/null
+  sidebartool remove "Documents" 2>/dev/null
+  sidebartool remove "Applications" 2>/dev/null
   
-  # Function to add a favorite with a more robust method
-  add_favorite() {
+  # Wait a moment
+  sleep 1
+  
+  # Function to add a favorite using sidebartool
+  add_favorite_sidebartool() {
     local name="$1"
     local path="$2"
     
     if [ ! -d "$path" ]; then
-      show_warning "Directory not found: $path"
+      show_warning "Directory not found, cannot add favorite: $path"
       return 1
     fi
     
-    # Generate URL with escaped characters (multiple methods)
-    local url1="file://$path"
-    local url2=$(echo "file://$path" | sed 's/ /%20/g')
-    
-    # Method 1: Simple URL
-    show_info "Trying to add $name with simple URL..."
-    mysides add "$name" "$url1" 2>/dev/null
-    
-    # Check if added
-    if mysides list 2>/dev/null | grep -q "$name"; then
-      show_success "Favorite added: $name"
-      return 0
+    show_info "Attempting to add favorite: '$name' -> '$path' using sidebartool..."
+    sidebartool add "$name" "$path" # Use the direct path
+    if [ $? -eq 0 ]; then
+        show_success "Favorite added: $name"
+        return 0
+    else
+        show_warning "sidebartool add failed for: $name. You may need to add it manually."
+        return 1
     fi
-    
-    # Method 2: Escaped URL
-    show_info "Trying to add $name with escaped URL..."
-    mysides add "$name" "$url2" 2>/dev/null
-    
-    # Check if added
-    if mysides list 2>/dev/null | grep -q "$name"; then
-      show_success "Favorite added: $name"
-      return 0
-    fi
-    
-    # Method 3: Direct path
-    show_info "Trying to add $name with direct path..."
-    mysides add "$name" "$path" 2>/dev/null
-    
-    # Check if added
-    if mysides list 2>/dev/null | grep -q "$name"; then
-      show_success "Favorite added: $name"
-      return 0
-    fi
-    
-    # Method 4: mysides with additional options (force)
-    show_info "Trying advanced method for $name..."
-    # Using extra parameters to force adding
-    osascript -e "tell application \"Finder\" to set sidebar of front window to sidebar of front window" 2>/dev/null
-    mysides add "$name" "file://$path" 2>/dev/null
-    
-    show_warning "You may need to add $name manually."
-    return 1
   }
   
   # Recursive search to find specific folders
@@ -470,10 +472,10 @@ add_google_drive_favorites() {
     
     if [ -n "$path_found" ]; then
       show_info "Folder '$folder_name' found at: $path_found"
-      add_favorite "$folder_name" "$path_found"
+      add_favorite_sidebartool "$folder_name" "$path_found"
       return 0
     else
-      show_warning "Folder '$folder_name' not found in $base_directory"
+      # Don't show warning here, let the main loop handle it
       return 1
     fi
   }
@@ -483,11 +485,11 @@ add_google_drive_favorites() {
   SHARED_DRIVES_PATH="$GOOGLE_DRIVE_DIR/Shared drives"
   
   if [ -d "$MY_DRIVE_PATH" ]; then
-    add_favorite "My Drive" "$MY_DRIVE_PATH"
+    add_favorite_sidebartool "My Drive" "$MY_DRIVE_PATH"
   fi
   
   if [ -d "$SHARED_DRIVES_PATH" ]; then
-    add_favorite "Shared drives" "$SHARED_DRIVES_PATH"
+    add_favorite_sidebartool "Shared drives" "$SHARED_DRIVES_PATH"
   fi
   
   # Search and add important folders in various locations
@@ -496,8 +498,8 @@ add_google_drive_favorites() {
     FOUND=0
     
     # 1. Check in home folder root
-    if [ -d ~/"$folder" ]; then
-      add_favorite "$folder" ~/"$folder"
+    if [ -d ~ /"$folder" ]; then
+      add_favorite_sidebartool "$folder" ~ /"$folder"
       FOUND=1
       continue
     fi
@@ -521,17 +523,18 @@ add_google_drive_favorites() {
       fi
     fi
     
-    # 4. Check directly in known Shared Drives
+    # 4. Check directly in known Shared Drives (adjust if needed)
     if [ -d "$SHARED_DRIVES_PATH" ] && [ $FOUND -eq 0 ]; then
       for drive in "$SHARED_DRIVES_PATH"/*; do
         if [ -d "$drive/$folder" ]; then
-          add_favorite "$folder" "$drive/$folder"
+          add_favorite_sidebartool "$folder" "$drive/$folder"
           FOUND=1
           break
-        elif [ -d "$drive/PUBLICIDADE/$folder" ]; then
-          add_favorite "$folder" "$drive/PUBLICIDADE/$folder"
-          FOUND=1
-          break
+        # Remove specific subfolder checks unless necessary
+        # elif [ -d "$drive/PUBLICIDADE/$folder" ]; then
+        #   add_favorite_sidebartool "$folder" "$drive/PUBLICIDADE/$folder"
+        #   FOUND=1
+        #   break
         fi
       done
     fi
@@ -542,10 +545,10 @@ add_google_drive_favorites() {
   done
   
   # Add standard system folders
-  add_favorite "Desktop" "$HOME/Desktop"
-  add_favorite "Downloads" "$HOME/Downloads"
-  add_favorite "Documents" "$HOME/Documents"
-  add_favorite "Applications" "/Applications"
+  add_favorite_sidebartool "Desktop" "$HOME/Desktop"
+  add_favorite_sidebartool "Downloads" "$HOME/Downloads"
+  add_favorite_sidebartool "Documents" "$HOME/Documents"
+  add_favorite_sidebartool "Applications" "/Applications"
   
   show_success "Google Drive favorites added successfully!"
   
@@ -562,8 +565,8 @@ add_google_drive_favorites() {
 restore_all_favorites() {
   show_info "Restoring all Finder sidebar favorites..."
   
-  # Check if mysides is installed
-  check_mysides || return 1
+  # Check if sidebartool is installed
+  check_sidebartool || return 1
   
   # Check if the latest backup exists
   LATEST_BACKUP="$BACKUP_DIR/Backups/latest_backup.txt"
@@ -636,90 +639,69 @@ restore_all_favorites() {
   fi
   
   if [[ "$CONFIRM_RESTORE" == "y" || "$CONFIRM_RESTORE" == "Y" ]]; then
-    # Remove existing favorites (only those in the backup to avoid removing others)
-    show_info "Removing existing favorites..."
+    # Remove existing favorites (only those listed in the names file)
+    show_info "Removing existing favorites listed in the backup names file..."
     while read -r name; do
       if [ -n "$name" ]; then
-        mysides remove "$name" 2>/dev/null
-        echo "Removed: $name"
+        show_info "Attempting to remove: $name"
+        sidebartool remove "$name" 2>/dev/null
+        if [ $? -eq 0 ]; then
+            echo "Removed: $name"
+        else
+            show_warning "Failed to remove (or didn't exist): $name"
+        fi
       fi
     done < "$TEMP_NAMES_FILE"
     
-    # Wait a moment to ensure all favorites were removed
+    # Wait a moment
     sleep 1
     
     # Add favorites from backup
-    show_info "Restoring favorites from backup..."
+    show_info "Restoring favorites from backup file: $RESTORE_FILE..."
     
-    # Find current Google Drive directory
-    GOOGLE_DRIVE_DIR=""
-    if [ -d ~/Library/CloudStorage ]; then
-      GOOGLE_DRIVE_DIR=$(find ~/Library/CloudStorage -maxdepth 1 -name "GoogleDrive-*" -type d | head -1)
-    fi
-    
-    # Use grep to avoid comment lines and correctly process names with spaces
-    grep -v "^#" "$RESTORE_FILE" | while read -r line; do
-      if [ -n "$line" ]; then
-        # Extract name and path
-        name=$(echo "$line" | awk -F " file://" '{print $1}')
-        path_url=$(echo "$line" | awk -F " file://" '{print $2}')
-        
-        # Decode URL to check if directory exists
-        # Replace %20 with space and other common codes
-        decoded_path=$(echo "$path_url" | 
-          perl -pe 's/%20/ /g; s/%([0-9A-F]{2})/chr(hex($1))/gie' 2>/dev/null ||
-          echo "$path_url" | sed 's/%20/ /g')
-        
-        # Check if path exists using decoded path
-        if [ -d "$decoded_path" ]; then
-          show_info "Adding: $name -> file://$path_url"
-          mysides add "$name" "file://$path_url" 2>/dev/null
-          echo "Added: $name -> $decoded_path"
-        else
-          show_warning "Path not found: $decoded_path"
-          show_info "Trying to add $name directly with original URL..."
+    # Check if the backup file contains paths (from fallback method)
+    if grep -q " file://" "$RESTORE_FILE"; then
+      show_info "DEBUG: Backup file contains paths. Restoring using name and path."
+      # Use grep to avoid comment lines and correctly process names with spaces
+      grep -v "^#" "$RESTORE_FILE" | while read -r line; do
+        if [ -n "$line" ]; then
+          # Extract name and path URL
+          name=$(echo "$line" | awk -F " file://" '{print $1}')
+          path_url=$(echo "$line" | awk -F " file://" '{print $2}')
           
-          # Try direct method using original URL
-          mysides add "$name" "file://$path_url" 2>/dev/null
+          # Decode URL to get the filesystem path
+          decoded_path=$(echo "$path_url" | 
+            perl -pe 's/%20/ /g; s/%([0-9A-F]{2})/chr(hex($1))/gie' 2>/dev/null ||
+            echo "$path_url" | sed 's/%20/ /g')
           
-          # Check if added
-          if mysides list 2>/dev/null | grep -q "$name"; then
-            show_success "Favorite added: $name (using original URL)"
-          else
-            # Try alternative method for specific folders
-            if [ "$name" == "Desktop" ]; then
-              mysides add "Desktop" "file:///Users/$(whoami)/Desktop"
-            elif [ "$name" == "Documents" ]; then
-              mysides add "Documents" "file:///Users/$(whoami)/Documents"
-            elif [ "$name" == "Downloads" ]; then
-              mysides add "Downloads" "file:///Users/$(whoami)/Downloads"
-            elif [ "$name" == "Applications" ]; then
-              mysides add "Applications" "file:///Applications"
-            elif [[ "$name" == *"Special_Characters_Folder"* ]]; then
-              # Try to locate this special folder
-              for location in ~/Desktop ~/Documents ~; do
-                if [ -d "$location/Special Characters Folder" ]; then
-                  mysides add "$name" "file://$location/Special Characters Folder"
-                  show_success "Located and added: $name"
-                  break
-                fi
-              done
+          # Check if path exists using decoded path
+          if [ -d "$decoded_path" ]; then
+            show_info "Adding: $name -> $decoded_path"
+            sidebartool add "$name" "$decoded_path" 2>/dev/null
+            if [ $? -ne 0 ]; then
+                show_warning "sidebartool add failed for: $name"
             else
-              # Try to find folder by name
-              found_location=$(find ~ -maxdepth 3 -type d -name "$name" -print -quit 2>/dev/null)
-              if [ -n "$found_location" ]; then
-                mysides add "$name" "file://$found_location"
-                show_success "Located and added: $name at $found_location"
-              else
-                show_error "Could not add $name"
-              fi
+                echo "Added: $name -> $decoded_path"
             fi
+          else
+            show_warning "Path not found for $name: $decoded_path. Cannot add."
           fi
         fi
-      fi
-    done
+      done
+    else
+        show_warning "Backup file ($RESTORE_FILE) does not contain paths."
+        show_info "This might happen if the backup was created using 'sidebartool list' which only stores names."
+        show_info "Cannot automatically restore paths. You may need to re-add favorites manually or use the 'Add only Google Drive favorites' option."
+    fi
     
-    show_success "Favorites restored successfully!"
+    show_success "Favorites restoration process completed!"
+    
+    # Ask if user wants to return to menu
+    echo ""
+    read -p "Return to main menu? (y/n, default: y): " RETURN_TO_MENU
+    if [[ "$RETURN_TO_MENU" != "n" && "$RETURN_TO_MENU" != "N" ]]; then
+      return 0
+    fi
     return 0
   else
     show_info "Restoration cancelled by user."
@@ -731,8 +713,8 @@ restore_all_favorites() {
 complete_process() {
   show_info "Starting the complete process (backup, cleanup and restoration)..."
   
-  # Check if mysides is installed
-  check_mysides || return 1
+  # Check if sidebartool is installed
+  check_sidebartool || return 1
   
   # 1. Backup favorites
   show_info "Step 1: Backing up favorites..."
