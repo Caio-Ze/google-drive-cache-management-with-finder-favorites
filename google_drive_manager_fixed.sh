@@ -709,6 +709,37 @@ restore_all_favorites() {
   fi
 }
 
+# Function to forcefully kill Google Drive processes
+force_kill_google_drive() {
+  show_warning "Attempting to forcefully kill all Google Drive processes..."
+  show_warning "This may cause unsynced files or other issues. Use with caution!"
+  
+  # Try pkill -9 first
+  sudo pkill -9 -f "Google Drive"
+  sleep 1 # Give it a moment
+  
+  # Check if still running and try killall -9
+  if pgrep -f "Google Drive" >/dev/null; then
+      show_warning "pkill -9 might not have terminated all processes. Trying killall -9..."
+      sudo killall -9 "Google Drive" 2>/dev/null
+      sleep 1
+  fi
+  
+  # Final check
+  if pgrep -f "Google Drive" >/dev/null; then
+    show_error "Failed to forcefully kill all Google Drive processes. Manual intervention might be required."
+  else
+    show_success "Google Drive processes forcefully terminated."
+  fi
+  
+  # Ask if user wants to return to menu
+  echo ""
+  read -p "Return to main menu? (y/n, default: y): " RETURN_TO_MENU
+  if [[ "$RETURN_TO_MENU" != "n" && "$RETURN_TO_MENU" != "N" ]]; then
+    return 0
+  fi
+}
+
 # Function to perform the complete process (backup, cleanup and restoration)
 complete_process() {
   show_info "Starting the complete process (backup, cleanup and restoration)..."
@@ -760,9 +791,10 @@ display_menu() {
   echo "3. Clean Google Drive cache"
   echo "4. Restore all favorites from backup"
   echo "5. Add only Google Drive favorites"
-  echo "6. Exit"
+  echo "6. Forcefully kill Google Drive processes"
+  echo "7. Exit"
   echo ""
-  read -p "Enter your choice (1-6): " OPTION
+  read -p "Enter your choice (1-7): " OPTION
   
   case $OPTION in
     1)
@@ -781,6 +813,9 @@ display_menu() {
       add_google_drive_favorites
       ;;
     6)
+      force_kill_google_drive
+      ;;
+    7)
       show_info "Exiting..."
       exit 0
       ;;
