@@ -1,10 +1,21 @@
 #!/bin/bash
 
-# Unified script to manage Google Drive cache and Finder favorites
-# Fixed version to avoid the mysides segmentation fault problem
+# Auto-detect script location
+SCRIPT_PATH="$0"
+SCRIPT_DIR="$( cd "$( dirname "${SCRIPT_PATH}" )" && pwd )"
+MAC_OS_DIR="$SCRIPT_DIR/../MacOS"
 
 # Define the expected path for sidebartool
-SIDEBARTOOL_CMD="$HOME/sidebartool"
+# Use environment variable if set, otherwise default to app bundle location
+if [ -z "$SIDEBARTOOL_CMD" ]; then
+  SIDEBARTOOL_CMD="$MAC_OS_DIR/sidebartool"
+fi
+
+# Ensure it's executable
+chmod +x "$SIDEBARTOOL_CMD"
+
+# Unified script to manage Google Drive cache and Finder favorites
+# Fixed version to avoid the mysides segmentation fault problem
 
 # Function to display colored messages
 function show_info {

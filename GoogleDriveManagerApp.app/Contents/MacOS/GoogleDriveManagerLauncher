@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Get the app bundle's directory
+APP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CONTENTS_DIR="$(dirname "$APP_DIR")"
+RESOURCES_DIR="$CONTENTS_DIR/Resources"
+
+# Make the script executable
+chmod +x "$APP_DIR/sidebartool"
+chmod +x "$RESOURCES_DIR/google_drive_manager.sh"
+
+# Open Terminal and run the script
+open -a Terminal.app "$RESOURCES_DIR/google_drive_manager.sh"
+
+exit 0 
