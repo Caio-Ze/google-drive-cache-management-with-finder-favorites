@@ -1,84 +1,60 @@
 # Google Drive Cache Management with Finder Favorites Backup and Preservation
 
-Script to manage Google Drive cache and Finder sidebar favorites on macOS.
-
-## Why This Project Is Unique
-
-This project offers a specialized end-to-end workflow that combines multiple functionalities:
-- Backup of Finder sidebar favorites before cleanup
-- Google Drive cache cleanup optimization
-- Restoration of favorites after cleanup
-- Automatic addition of important Google Drive favorites
+Self-contained macOS application and script to manage Google Drive cache and Finder sidebar favorites.
 
 ## Features
 
-- Backup of Finder sidebar favorites
-- Google Drive cache cleanup
-- Restoration of favorites after cleanup
-- Automatic addition of important Google Drive favorites
+- Backup of Finder sidebar favorites before cache cleanup
+- Google Drive cache cleanup with optimization
+- Automatic restoration of favorites after cleanup
+- Built-in sidebartool for Finder sidebar management
+- Forceful termination of Google Drive processes when needed
+- Self-contained macOS application with no external dependencies
+- Fully compatible with latest macOS versions (Monterey to Sequoia)
 
-## Requirements
+## Installation Options
 
-- macOS
-- Xcode Command Line Tools (for installing sidebartool)
-- `sidebartool` (Script will offer to install it if necessary)
+### Option 1: Use the App Bundle (Recommended)
 
-## Compatibility
+1. Download the `GoogleDriveManager.dmg` file
+2. Mount the DMG and drag `GoogleDriveManagerApp.app` to your Applications folder
+3. Right-click on the app and select "Open" to bypass Gatekeeper on first run
 
-- **macOS Versions**: 10.15 Catalina, 11 Big Sur, 12 Monterey
-- **Google Drive Versions**: 
-  - Google Drive for Desktop 52.0.6 - 70.0.2 (2022-2023)
-  - Google Drive File Stream 45.0.12 and later
-- **Note**: May work with newer versions, but has been specifically tested with these versions
+### Option 2: Run the Script Directly
 
-## Usage
-
-1. Make the script executable:
 ```bash
 chmod +x google_drive_manager_fixed.sh
-```
-
-2. Run the script:
-```bash
 ./google_drive_manager_fixed.sh
 ```
 
-3. Follow the instructions in the interactive menu:
-   - Option 1: Complete process (backup, cleanup, and restoration)
-   - Option 2: Backup Finder favorites
-   - Option 3: Clean Google Drive cache
-   - Option 4: Restore favorites from backup
-   - Option 5: Add only Google Drive favorites
-   - Option 6: Exit
+## Usage
+
+The interactive menu offers these options:
+
+1. Complete process (backup, cleanup, and restoration)
+2. Backup Finder favorites
+3. Clean Google Drive cache
+4. Restore favorites from backup
+5. Add only Google Drive favorites
+6. Forcefully kill Google Drive processes
+7. Exit
 
 ## Notes
 
-- Backups are saved in `~/Desktop/Google_Drive_Manager/Backups/`
-- Restoration uses the most recent backup by default
-- If there are issues with automatic restoration, the script provides instructions for manually adding favorites
+- Backups are stored in `~/Desktop/Google_Drive_Manager/Backups/`
+- The app bundle includes all necessary dependencies (including sidebartool)
+- Compatible with macOS 12 Monterey, 13 Ventura, 14 Sonoma, 15 Sequoia
+- Works with Google Drive for Desktop 52.0.6+ and Google Drive File Stream 45.0.12+
 
 ## Versions
 
-- **v1.0**: Initial version with basic features
-- **v1.1**: Fixed "segmentation fault" issue with mysides
-- **v1.2**: Improvements in URL decoding and support for special characters
-- **v1.3**: Translated menu and interface to English for better accessibility
-
-## Latest Updates
-
-- Menu and user interface translated to English
-- Added version tracking with Git
-- Published on GitHub for better version control and sharing
+- **v1.0-v1.3**: Initial versions with basic features and improvements
+- **v2.0**: Added self-contained macOS application with bundled dependencies
+- **v2.1**: Improved compatibility with macOS Sonoma and Sequoia, added force kill option
 
 ## Contributing
 
-Contributions to improve the script are welcome! Feel free to:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions welcome! Fork the repository, create a feature branch, and open a Pull Request.
 
 ## License
 
